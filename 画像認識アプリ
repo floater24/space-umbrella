@@ -4,7 +4,7 @@
   "metadata": {
     "colab": {
       "provenance": [],
-      "authorship_tag": "ABX9TyOnoIYVl9MCr3ShRS0XI0P8",
+      "authorship_tag": "ABX9TyM/HIKw7Oim9+m7W7XFwy9B",
       "include_colab_link": true
     },
     "kernelspec": {
@@ -28,11 +28,38 @@
     },
     {
       "cell_type": "code",
-      "execution_count": 3,
+      "source": [],
       "metadata": {
-        "id": "Zeh28lK-v9jP"
+        "id": "9lIDzo_i31xO"
       },
-      "outputs": [],
+      "execution_count": 1,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 2,
+      "metadata": {
+        "id": "Pbqipzj3nCy4",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "3891737b-039a-4e05-a609-71596584d0de"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m9.6/9.6 MB\u001b[0m \u001b[31m20.6 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m164.8/164.8 kB\u001b[0m \u001b[31m13.8 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m195.4/195.4 kB\u001b[0m \u001b[31m18.8 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m4.8/4.8 MB\u001b[0m \u001b[31m37.8 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m83.0/83.0 kB\u001b[0m \u001b[31m9.1 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m62.7/62.7 kB\u001b[0m \u001b[31m7.0 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[?25h"
+          ]
+        }
+      ],
       "source": [
         "!pip install streamlit==1.20.0 --quiet\n",
         "!pip install pyngrok --quiet"
@@ -45,14 +72,16 @@
         "from pyngrok import ngrok"
       ],
       "metadata": {
-        "id": "ngbV45NewFeh"
+        "id": "OsHcq-kaDwIi"
       },
-      "execution_count": 4,
+      "execution_count": 3,
       "outputs": []
     },
     {
       "cell_type": "code",
       "source": [
+        "%%writefile model.py\n",
+        "# 以下を「model.py」に書き込み\n",
         "import torch\n",
         "import torch.nn as nn\n",
         "import torch.nn.functional as F\n",
@@ -64,6 +93,7 @@
         "n_class = len(classes_ja)\n",
         "img_size = 32\n",
         "\n",
+        "# CNNのモデル\n",
         "class Net(nn.Module):\n",
         "    def __init__(self):\n",
         "        super().__init__()\n",
@@ -84,6 +114,7 @@
         "        return x\n",
         "\n",
         "def predict(img):\n",
+        "    # モデルへの入力\n",
         "    img = img.convert(\"RGB\")\n",
         "    img = img.resize((img_size, img_size))\n",
         "    transform = transforms.Compose([transforms.ToTensor(),\n",
@@ -92,29 +123,44 @@
         "    img = transform(img)\n",
         "    x = img.reshape(1, 3, img_size, img_size)\n",
         "\n",
-        "\n",
+        "    # 訓練済みモデル\n",
         "    net = Net()\n",
         "    net.load_state_dict(torch.load(\n",
         "        \"model_cnn.pth\", map_location=torch.device(\"cpu\")\n",
         "        ))\n",
         "\n",
+        "    # 予測\n",
         "    net.eval()\n",
         "    y = net(x)\n",
         "\n",
-        "    y_prob = torch.nn.functional.softmax(torch.squeeze(y))\n",
-        "    sorted_prob, sorted_indices = torch.sort(y_prob, descending=True)\n",
+        "    # 結果を返す\n",
+        "    y_prob = torch.nn.functional.softmax(torch.squeeze(y))  # 確率で表す\n",
+        "    sorted_prob, sorted_indices = torch.sort(y_prob, descending=True)  # 降順にソート\n",
         "    return [(classes_ja[idx], classes_en[idx], prob.item()) for idx, prob in zip(sorted_indices, sorted_prob)]"
       ],
       "metadata": {
-        "id": "cgPqqRXkwJOB"
+        "id": "nmZpJOe9p6GF",
+        "outputId": "7c982a26-133d-4f5d-f658-e020e0bc930b",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
       },
-      "execution_count": 5,
-      "outputs": []
+      "execution_count": 4,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Writing model.py\n"
+          ]
+        }
+      ]
     },
     {
       "cell_type": "code",
       "source": [
         "%%writefile app.py\n",
+        "# 以下を「app.py」に書き込み\n",
         "import streamlit as st\n",
         "import matplotlib.pyplot as plt\n",
         "from PIL import Image\n",
@@ -140,13 +186,16 @@
         "        st.image(img, caption=\"対象の画像\", width=480)\n",
         "        st.write(\"\")\n",
         "\n",
+        "        # 予測\n",
         "        results = predict(img)\n",
         "\n",
+        "        # 結果の表示\n",
         "        st.subheader(\"判定結果\")\n",
-        "        n_top = 3\n",
+        "        n_top = 3  # 確率が高い順に3位まで返す\n",
         "        for result in results[:n_top]:\n",
         "            st.write(str(round(result[2]*100, 2)) + \"%の確率で\" + result[0] + \"です。\")\n",
         "\n",
+        "        # 円グラフの表示\n",
         "        pie_labels = [result[1] for result in results[:n_top]]\n",
         "        pie_labels.append(\"others\")\n",
         "        pie_probs = [result[2] for result in results[:n_top]]\n",
@@ -155,17 +204,17 @@
         "        wedgeprops={\"width\":0.3, \"edgecolor\":\"white\"}\n",
         "        textprops = {\"fontsize\":6}\n",
         "        ax.pie(pie_probs, labels=pie_labels, counterclock=False, startangle=90,\n",
-        "               textprops=textprops, autopct=\"%.2f\", wedgeprops=wedgeprops)\n",
+        "               textprops=textprops, autopct=\"%.2f\", wedgeprops=wedgeprops)  # 円グラフ\n",
         "        st.pyplot(fig)"
       ],
       "metadata": {
+        "id": "Ntj_BU3bnJli",
         "colab": {
           "base_uri": "https://localhost:8080/"
         },
-        "id": "crriS5Qmwb39",
-        "outputId": "ef4351f7-ccc7-4a53-b2b3-0c26d0f977e2"
+        "outputId": "e1e53a26-d1f4-4c9d-f38a-b42c91ea2da0"
       },
-      "execution_count": 7,
+      "execution_count": 5,
       "outputs": [
         {
           "output_type": "stream",
@@ -182,13 +231,13 @@
         "!ngrok authtoken 2cyzGA2ntsM6ymN6aMnBAh2Wzrk_4myQBsTf2ZrV52SDZ2Veb"
       ],
       "metadata": {
+        "id": "mTfmORj2Dn7-",
         "colab": {
           "base_uri": "https://localhost:8080/"
         },
-        "id": "pdGuAJd8wzSU",
-        "outputId": "bd48939a-3045-4090-be52-1b045c71b411"
+        "outputId": "790a9350-a757-40b9-9912-b9bba1d156a5"
       },
-      "execution_count": 8,
+      "execution_count": 6,
       "outputs": [
         {
           "output_type": "stream",
@@ -202,61 +251,61 @@
     {
       "cell_type": "code",
       "source": [
-        "!streamlit run app.py &>/dev/null&"
+        "!streamlit run app.py &>/dev/null&  # 「&>/dev/null&」により、出力を非表示にしてバックグランドジョブとして実行"
       ],
       "metadata": {
-        "id": "ozLtPFvuw1_R"
+        "id": "W0jXlMXWK0vi"
       },
-      "execution_count": 9,
+      "execution_count": 7,
       "outputs": []
     },
     {
       "cell_type": "code",
       "source": [
         "ngrok.kill()  # プロセスの修了\n",
-        "url = ngrok.connect(\"8501\").public_url"
+        "url = ngrok.connect(\"8501\").public_url  # 接続"
       ],
       "metadata": {
+        "id": "v23ymsdLK3x7",
         "colab": {
           "base_uri": "https://localhost:8080/"
         },
-        "id": "C-_DoLW6w5Wk",
-        "outputId": "5af46cee-c662-4d65-9853-1a036159692b"
+        "outputId": "32dfeb6e-ecab-4d5b-e6dc-883df309be34"
       },
-      "execution_count": 10,
+      "execution_count": 8,
       "outputs": [
         {
           "output_type": "stream",
           "name": "stderr",
           "text": [
-            "INFO:pyngrok.ngrok:Opening tunnel named: http-8501-e4e65d9e-4425-4852-ad82-788d30729472\n",
-            "2024-03-07 11:58:09.537 INFO    pyngrok.ngrok: Opening tunnel named: http-8501-e4e65d9e-4425-4852-ad82-788d30729472\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=\"no configuration paths supplied\"\n",
-            "2024-03-07 11:58:09.565 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=\"no configuration paths supplied\"\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=\"using configuration at default config path\" path=/root/.config/ngrok/ngrok.yml\n",
-            "2024-03-07 11:58:09.576 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=\"using configuration at default config path\" path=/root/.config/ngrok/ngrok.yml\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=\"open config file\" path=/root/.config/ngrok/ngrok.yml err=nil\n",
-            "2024-03-07 11:58:09.584 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=\"open config file\" path=/root/.config/ngrok/ngrok.yml err=nil\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=\"starting web service\" obj=web addr=127.0.0.1:4040 allow_hosts=[]\n",
-            "2024-03-07 11:58:09.613 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=\"starting web service\" obj=web addr=127.0.0.1:4040 allow_hosts=[]\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=\"client session established\" obj=tunnels.session obj=csess id=2a4e68b4b72f\n",
-            "2024-03-07 11:58:09.676 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=\"client session established\" obj=tunnels.session obj=csess id=2a4e68b4b72f\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=\"tunnel session started\" obj=tunnels.session\n",
-            "2024-03-07 11:58:09.682 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=\"tunnel session started\" obj=tunnels.session\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=start pg=/api/tunnels id=d238b3927ae217d0\n",
-            "2024-03-07 11:58:09.702 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=start pg=/api/tunnels id=d238b3927ae217d0\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=end pg=/api/tunnels id=d238b3927ae217d0 status=200 dur=336.204µs\n",
-            "2024-03-07 11:58:09.715 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=end pg=/api/tunnels id=d238b3927ae217d0 status=200 dur=336.204µs\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=start pg=/api/tunnels id=d01e4864ff71525b\n",
-            "2024-03-07 11:58:09.724 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=start pg=/api/tunnels id=d01e4864ff71525b\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=end pg=/api/tunnels id=d01e4864ff71525b status=200 dur=115.932µs\n",
-            "2024-03-07 11:58:09.728 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=end pg=/api/tunnels id=d01e4864ff71525b status=200 dur=115.932µs\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=start pg=/api/tunnels id=f7d6f75ae366b89f\n",
-            "2024-03-07 11:58:09.735 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=start pg=/api/tunnels id=f7d6f75ae366b89f\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=\"started tunnel\" obj=tunnels name=http-8501-e4e65d9e-4425-4852-ad82-788d30729472 addr=http://localhost:8501 url=https://e1ea-34-85-190-131.ngrok-free.app\n",
-            "2024-03-07 11:58:09.755 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=\"started tunnel\" obj=tunnels name=http-8501-e4e65d9e-4425-4852-ad82-788d30729472 addr=http://localhost:8501 url=https://e1ea-34-85-190-131.ngrok-free.app\n",
-            "INFO:pyngrok.process.ngrok:t=2024-03-07T11:58:09+0000 lvl=info msg=end pg=/api/tunnels id=f7d6f75ae366b89f status=201 dur=54.26036ms\n",
-            "2024-03-07 11:58:09.759 INFO    pyngrok.process.ngrok: t=2024-03-07T11:58:09+0000 lvl=info msg=end pg=/api/tunnels id=f7d6f75ae366b89f status=201 dur=54.26036ms\n"
+            "INFO:pyngrok.ngrok:Opening tunnel named: http-8501-08282cf7-641f-473c-9dfa-e0de8ceb6ac5\n",
+            "2024-03-07 12:28:27.036 INFO    pyngrok.ngrok: Opening tunnel named: http-8501-08282cf7-641f-473c-9dfa-e0de8ceb6ac5\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=\"no configuration paths supplied\"\n",
+            "2024-03-07 12:28:27.127 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=\"no configuration paths supplied\"\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=\"using configuration at default config path\" path=/root/.config/ngrok/ngrok.yml\n",
+            "2024-03-07 12:28:27.142 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=\"using configuration at default config path\" path=/root/.config/ngrok/ngrok.yml\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=\"open config file\" path=/root/.config/ngrok/ngrok.yml err=nil\n",
+            "2024-03-07 12:28:27.154 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=\"open config file\" path=/root/.config/ngrok/ngrok.yml err=nil\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=\"starting web service\" obj=web addr=127.0.0.1:4040 allow_hosts=[]\n",
+            "2024-03-07 12:28:27.228 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=\"starting web service\" obj=web addr=127.0.0.1:4040 allow_hosts=[]\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=\"client session established\" obj=tunnels.session obj=csess id=42a14fa89dd2\n",
+            "2024-03-07 12:28:27.360 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=\"client session established\" obj=tunnels.session obj=csess id=42a14fa89dd2\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=\"tunnel session started\" obj=tunnels.session\n",
+            "2024-03-07 12:28:27.371 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=\"tunnel session started\" obj=tunnels.session\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=start pg=/api/tunnels id=01e1f34077a463bf\n",
+            "2024-03-07 12:28:27.395 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=start pg=/api/tunnels id=01e1f34077a463bf\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=end pg=/api/tunnels id=01e1f34077a463bf status=200 dur=409.024µs\n",
+            "2024-03-07 12:28:27.404 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=end pg=/api/tunnels id=01e1f34077a463bf status=200 dur=409.024µs\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=start pg=/api/tunnels id=b889cbf2c1658179\n",
+            "2024-03-07 12:28:27.413 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=start pg=/api/tunnels id=b889cbf2c1658179\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=end pg=/api/tunnels id=b889cbf2c1658179 status=200 dur=178.172µs\n",
+            "2024-03-07 12:28:27.420 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=end pg=/api/tunnels id=b889cbf2c1658179 status=200 dur=178.172µs\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=start pg=/api/tunnels id=a1a9b90f8091012e\n",
+            "2024-03-07 12:28:27.426 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=start pg=/api/tunnels id=a1a9b90f8091012e\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=\"started tunnel\" obj=tunnels name=http-8501-08282cf7-641f-473c-9dfa-e0de8ceb6ac5 addr=http://localhost:8501 url=https://5acc-34-73-53-254.ngrok-free.app\n",
+            "2024-03-07 12:28:27.435 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=\"started tunnel\" obj=tunnels name=http-8501-08282cf7-641f-473c-9dfa-e0de8ceb6ac5 addr=http://localhost:8501 url=https://5acc-34-73-53-254.ngrok-free.app\n",
+            "INFO:pyngrok.process.ngrok:t=2024-03-07T12:28:27+0000 lvl=info msg=end pg=/api/tunnels id=a1a9b90f8091012e status=201 dur=40.453466ms\n",
+            "2024-03-07 12:28:27.447 INFO    pyngrok.process.ngrok: t=2024-03-07T12:28:27+0000 lvl=info msg=end pg=/api/tunnels id=a1a9b90f8091012e status=201 dur=40.453466ms\n"
           ]
         }
       ]
@@ -267,19 +316,19 @@
         "print(url)"
       ],
       "metadata": {
+        "id": "MIY7ositLAXC",
         "colab": {
           "base_uri": "https://localhost:8080/"
         },
-        "id": "1SI2GR9yw8Id",
-        "outputId": "e4b72829-ea01-4017-81e6-9ab801c0f7a7"
+        "outputId": "02cd6efd-e695-420d-fc3e-6785e763c64e"
       },
-      "execution_count": 11,
+      "execution_count": 9,
       "outputs": [
         {
           "output_type": "stream",
           "name": "stdout",
           "text": [
-            "https://e1ea-34-85-190-131.ngrok-free.app\n"
+            "https://5acc-34-73-53-254.ngrok-free.app\n"
           ]
         }
       ]
@@ -300,13 +349,13 @@
         "print(\"matplotlib==\" + matplotlib.__version__)"
       ],
       "metadata": {
+        "id": "wzvY6S9qrCkD",
         "colab": {
           "base_uri": "https://localhost:8080/"
         },
-        "id": "x9Qa--RMw_k4",
-        "outputId": "f8445cf3-7bf0-4cb5-d694-749efa9b45a1"
+        "outputId": "2d384ecd-b47a-43f6-c20e-b8e6c8be81db"
       },
-      "execution_count": 12,
+      "execution_count": 10,
       "outputs": [
         {
           "output_type": "stream",
@@ -325,15 +374,16 @@
       "cell_type": "code",
       "source": [
         "with open(\"requirements.txt\", \"w\") as w:\n",
-        "    w.write(\"streamlit==1.8.1\\n\")\n",
-        "    w.write(\"torchvision==0.11.1\\n\")\n",
+        "    w.write(\"streamlit==1.8.1\\n\")  # Streamlit Cloud上で動作が確認できたバージョン\n",
+        "    w.write(\"torch==1.10.0\\n\")  # Cuda対応は要らないのでcu111は記述しない\n",
+        "    w.write(\"torchvision==0.11.1\\n\")  # Cuda対応は要らないのでcu111は記述しない\n",
         "    w.write(\"Pillow\\n\")\n",
         "    w.write(\"matplotlib\\n\")"
       ],
       "metadata": {
-        "id": "lo19meOuxDrJ"
+        "id": "0h-58Ai2OO63"
       },
-      "execution_count": 13,
+      "execution_count": 11,
       "outputs": []
     }
   ]
